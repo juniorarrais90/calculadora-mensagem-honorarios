@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora Financeira Inteligente — Arrais Advogados</title>
+<style>
+  :root{
+    --azul:#0f2747;
+    --azul2:#1b3a64;
+    --azul-claro:#2f5a93;
+    --cinza:#f4f6f9;
+    --cinza-borda:#d8dee7;
+    --texto:#1c2430;
+    --verde:#1e7d46;
+    --verde-bg:#e7f4ec;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:Arial, "Inter", system-ui, sans-serif;
+    background:var(--cinza);
+    color:var(--texto);
+    font-size:15px;
+    line-height:1.45;
+  }
+  header{background:var(--azul);color:#fff;padding:22px 28px;}
+  header h1{font-size:19px;margin:0;font-weight:700;letter-spacing:.2px;}
+  header p{margin:4px 0 0;font-size:13px;color:#bcd0ea;}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px;}
+  .tabs{display:flex;gap:6px;border-bottom:2px solid var(--cinza-borda);margin-bottom:22px;flex-wrap:wrap;}
+  .tab{padding:11px 18px;border:none;background:transparent;cursor:pointer;font-size:14px;font-weight:600;color:#6a7787;border-bottom:3px solid transparent;margin-bottom:-2px;border-radius:6px 6px 0 0;}
+  .tab.active{color:var(--azul);border-bottom-color:var(--azul-claro);background:#fff;}
+  .tab:disabled{color:#aab3bf;cursor:not-allowed;}
+  .tab .badge{font-size:10px;background:#e2e8f0;color:#5b6675;border-radius:10px;padding:1px 7px;margin-left:6px;vertical-align:middle;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+  @media(max-width:840px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff;border:1px solid var(--cinza-borda);border-radius:10px;padding:20px;}
+  .card h2{font-size:14px;text-transform:uppercase;letter-spacing:.5px;color:var(--azul-claro);margin:0 0 4px;}
+  .card .modtag{font-size:11px;color:#90a0b3;margin:0 0 16px;display:block;}
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 5px;}
+  label:first-of-type{margin-top:0;}
+  .hint{font-weight:400;color:#8a96a5;font-size:11px;}
+  input,select{width:100%;padding:10px 12px;border:1px solid var(--cinza-borda);border-radius:7px;font-size:14px;font-family:inherit;background:#fff;color:var(--texto);}
+  input:focus,select:focus{outline:none;border-color:var(--azul-claro);box-shadow:0 0 0 3px rgba(47,90,147,.12);}
+  input[readonly],input:disabled{background:#eef1f5;color:#7a8696;}
+  .row{display:flex;gap:12px;}
+  .row > div{flex:1;}
+  .check{display:flex;align-items:flex-start;gap:8px;margin-top:14px;font-size:13px;font-weight:600;}
+  .check input{width:auto;margin-top:2px;}
+  .check.sub{font-weight:400;color:#5b6675;margin-top:10px;}
+  .btn-gerar{width:100%;margin-top:22px;padding:14px;background:var(--azul);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.3px;}
+  .btn-gerar:hover{background:var(--azul2);}
+  .saida h2{margin-top:0;}
+  .resumo{font-size:13px;background:var(--cinza);border-radius:8px;padding:14px;margin-bottom:16px;}
+  .resumo table{width:100%;border-collapse:collapse;}
+  .resumo td{padding:4px 0;vertical-align:top;}
+  .resumo td:first-child{color:#6a7787;width:46%;}
+  .resumo td:last-child{font-weight:600;text-align:right;}
+  .comp-list{margin:10px 0 0;font-size:12.5px;}
+  .comp-list .item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--cinza-borda);}
+  .pill{font-size:10px;padding:1px 8px;border-radius:10px;font-weight:700;}
+  .pill.banca{background:#fde8e8;color:#9b2c2c;}
+  .pill.cliente{background:var(--verde-bg);color:var(--verde);}
+  .msg-box{white-space:pre-wrap;font-family:"Segoe UI", Arial, sans-serif;font-size:13.5px;background:#f7faf7;border:1px solid #cfe3d6;border-radius:10px;padding:16px;line-height:1.55;max-height:460px;overflow:auto;}
+  .btn-copiar{margin-top:12px;width:100%;padding:12px;background:var(--verde);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;}
+  .btn-copiar:hover{filter:brightness(.95);}
+  .empty{color:#90a0b3;font-size:13px;text-align:center;padding:40px 10px;}
+  .aviso{font-size:11px;color:#90a0b3;margin-top:14px;line-height:1.4;}
+  .erro{background:#fde8e8;color:#9b2c2c;border-radius:7px;padding:10px 12px;font-size:13px;margin-top:14px;display:none;}
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+<header>
+  <h1>Calculadora Financeira Inteligente</h1>
+  <p>Arrais Advogados &middot; Automatização e padronização do fechamento de benefícios</p>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" data-tab="sm">Salário-Maternidade</button>
+    <button class="tab" data-tab="bpc" disabled>BPC / LOAS <span class="badge">em breve</span></button>
+    <button class="tab" data-tab="inc" disabled>Incapacidade <span class="badge">em breve</span></button>
+  </div>
+
+  <div id="tab-sm">
+    <div class="grid">
+      <!-- ENTRADA -->
+      <div>
+        <div class="card">
+          <h2>Módulo I &middot; Dados do benefício</h2>
+          <span class="modtag">Informações liberadas pelo INSS</span>
+
+          <label>Nome da cliente <span class="hint">(só para seu controle — na mensagem entra "@" para marcar no WhatsApp)</span></label>
+          <input id="nome" type="text" placeholder="Ex.: Maria da Silva">
+
+          <div class="row">
+            <div>
+              <label>Início do benefício <span class="hint">(nascimento)</span></label>
+              <input id="periodoIni" type="date">
+            </div>
+            <div>
+              <label>Fim do benefício <span class="hint" id="fimHint">120 dias (auto)</span></label>
+              <input id="periodoFim" type="date" readonly>
+            </div>
+          </div>
+
+          <label class="check">
+            <input type="checkbox" id="excChk" onchange="toggleExc()">
+            <span>Benefício pago por período menor que 120 dias <span class="hint">(óbito, aborto etc.)</span></span>
+          </label>
+          <div id="excBox" class="hidden">
+            <label>Quantidade de dias do benefício</label>
+            <input id="dias" type="number" min="1" max="120" value="120" oninput="recalcFim()">
+            <label class="check sub">
+              <input type="checkbox" id="incl13" checked>
+              <span>Incluir 13º proporcional na última competência <span class="hint">(desmarque no aborto)</span></span>
+            </label>
+          </div>
+
+          <label>Data da concessão do benefício <span class="hint">(define se é parcelado ou pago de uma vez)</span></label>
+          <input id="concessao" type="date">
+
+          <label>Disponível para saque a partir de <span class="hint">(data do 1º pagamento)</span></label>
+          <input id="disponibilidade" type="date">
+
+          <div class="row">
+            <div>
+              <label>Faixa do benefício <span class="hint">(calendário INSS)</span></label>
+              <select id="faixa">
+                <option value="ate">Até 1 salário mínimo</option>
+                <option value="acima">Acima de 1 salário mínimo</option>
+              </select>
+            </div>
+            <div>
+              <label>Final do benefício <span class="hint">(penúltimo nº, antes do dígito)</span></label>
+              <select id="digito">
+                <option value="">—</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="0">0</option>
+              </select>
+            </div>
+          </div>
+
+          <label>Valor total do benefício <span class="hint">120 dias + 13º, líquido</span></label>
+          <input id="total" type="text" inputmode="numeric" value="6.150,00">
+
+          <div id="boxPrimeiroPag">
+            <label>Valor do 1º pagamento</label>
+            <input id="primeiroPag" type="text" inputmode="numeric" placeholder="R$ 0,00">
+          </div>
+          <p id="avisoUnico" class="aviso hidden" style="color:#9b2c2c;">Benefício concedido após os 120 dias — será pago de uma vez, não há 1º pagamento separado.</p>
+
+          <label>Banco do benefício <span class="hint">(onde a cliente saca)</span></label>
+          <select id="bancoBenef" onchange="toggleBanco()">
+            <option value="Mercantil" selected>Mercantil</option>
+            <option value="Itaú">Itaú</option>
+            <option value="Bradesco">Bradesco</option>
+            <option value="Banco do Brasil">Banco do Brasil</option>
+            <option value="Santander">Santander</option>
+            <option value="Caixa Econômica Federal">Caixa Econômica Federal</option>
+            <option value="Sicoob">Sicoob</option>
+            <option value="Sicredi">Sicredi</option>
+            <option value="Crefisa">Crefisa</option>
+            <option value="__outro">Outro…</option>
+          </select>
+          <input id="bancoOutro" class="hidden" type="text" placeholder="Digite o nome do banco" style="margin-top:8px;">
+        </div>
+
+        <div class="card" style="margin-top:22px;">
+          <h2>Módulo II &middot; Honorários</h2>
+          <span class="modtag">Parametrização contratual</span>
+
+          <label>Tipo de honorários</label>
+          <select id="tipoHon" onchange="toggleHon()">
+            <option value="fixo">Valor fixo</option>
+            <option value="pct">Porcentagem do benefício</option>
+          </select>
+
+          <div id="boxHonFixo">
+            <label>Valor dos honorários</label>
+            <input id="honorarios" type="text" inputmode="numeric" value="1.600,00">
+          </div>
+          <div id="boxHonPct" class="hidden">
+            <label>Porcentagem sobre o valor total do benefício</label>
+            <select id="pct">
+              <option value="25">25%</option>
+              <option value="30">30%</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Desconto a partir da</label>
+              <select id="compInicio">
+                <option value="1">1ª competência</option>
+                <option value="2" selected>2ª competência</option>
+                <option value="3">3ª competência</option>
+              </select>
+            </div>
+            <div>
+              <label>Parcelas</label>
+              <select id="parcelas">
+                <option value="1">1x</option>
+                <option value="2" selected>2x</option>
+                <option value="3">3x</option>
+                <option value="4">4x</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:22px;">
+          <h2>Módulo III &middot; Notificação</h2>
+          <span class="modtag">Forma de pagamento dos honorários</span>
+
+          <label>Forma de pagamento</label>
+          <select id="forma">
+            <option value="mercantil">Banco Mercantil — Desconto direto</option>
+            <option value="asaas">Boleto bancário</option>
+            <option value="pix">Pix</option>
+          </select>
+
+          <button class="btn-gerar" onclick="gerar()">Gerar cálculo e mensagem</button>
+          <div class="erro" id="erro"></div>
+          <p class="aviso">Confira sempre os valores e datas antes de enviar ao cliente. As datas de pagamento aparecem como [XX/XX/XXXX] para preenchimento rápido no destino.</p>
+        </div>
+      </div>
+
+      <!-- SAÍDA -->
+      <div>
+        <div class="card saida">
+          <h2>Resultado</h2>
+          <div id="resultado">
+            <div class="empty">Preencha os dados e clique em <b>Gerar cálculo e mensagem</b>.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- utilidades ----------
+function parseBR(v){ if(!v) return 0; v=String(v).replace(/\s|R\$/g,'').replace(/\./g,'').replace(',','.'); const n=parseFloat(v); return isNaN(n)?0:n; }
+function fmt(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function diasNoMes(a,m){ return new Date(a,m+1,0).getDate(); }
+function addDias(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function isoToBR(iso){ return iso? iso.split('-').reverse().join('/') : '[XX/XX/XXXX]'; }
+function toISO(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+// ---------- Calendário INSS 2026 (extraído do PDF oficial) ----------
+// Colunas: idx0=competência dez/2025, idx1=jan/2026 ... idx12=dez/2026. Valor = data real do pagamento.
+const CAL_ATE={"0":["2026-01-08","2026-02-06","2026-03-06","2026-04-08","2026-05-08","2026-06-08","2026-07-07","2026-08-07","2026-09-08","2026-10-07","2026-11-09","2026-12-07","2027-01-08"],"1":["2025-12-22","2026-01-26","2026-02-23","2026-03-25","2026-04-24","2026-05-25","2026-06-24","2026-07-27","2026-08-25","2026-09-24","2026-10-26","2026-11-24","2026-12-22"],"2":["2025-12-23","2026-01-27","2026-02-24","2026-03-26","2026-04-27","2026-05-26","2026-06-25","2026-07-28","2026-08-26","2026-09-25","2026-10-27","2026-11-25","2026-12-23"],"3":["2025-12-26","2026-01-28","2026-02-25","2026-03-27","2026-04-28","2026-05-27","2026-06-26","2026-07-29","2026-08-27","2026-09-28","2026-10-28","2026-11-26","2026-12-28"],"4":["2025-12-29","2026-01-29","2026-02-26","2026-03-30","2026-04-29","2026-05-28","2026-06-29","2026-07-30","2026-08-28","2026-09-29","2026-10-29","2026-11-27","2026-12-29"],"5":["2025-12-30","2026-01-30","2026-02-27","2026-03-31","2026-04-30","2026-05-29","2026-06-30","2026-07-31","2026-08-31","2026-09-30","2026-10-30","2026-11-30","2026-12-30"],"6":["2026-01-02","2026-02-02","2026-03-02","2026-04-01","2026-05-04","2026-06-01","2026-07-01","2026-08-03","2026-09-01","2026-10-01","2026-11-03","2026-12-01","2027-01-04"],"7":["2026-01-05","2026-02-03","2026-03-03","2026-04-02","2026-05-05","2026-06-02","2026-07-02","2026-08-04","2026-09-02","2026-10-02","2026-11-04","2026-12-02","2027-01-05"],"8":["2026-01-06","2026-02-04","2026-03-04","2026-04-06","2026-05-06","2026-06-03","2026-07-03","2026-08-05","2026-09-03","2026-10-05","2026-11-05","2026-12-03","2027-01-06"],"9":["2026-01-07","2026-02-05","2026-03-05","2026-04-07","2026-05-07","2026-06-05","2026-07-06","2026-08-06","2026-09-04","2026-10-06","2026-11-06","2026-12-04","2027-01-07"]};
+const CAL_ACIMA={"1e6":["2026-01-02","2026-02-02","2026-03-02","2026-04-01","2026-05-02","2026-06-01","2026-07-01","2026-08-03","2026-09-01","2026-10-01","2026-11-03","2026-12-01","2027-01-04"],"2e7":["2026-01-05","2026-02-03","2026-03-03","2026-04-02","2026-05-05","2026-06-02","2026-07-02","2026-08-04","2026-09-02","2026-10-02","2026-11-04","2026-12-02","2027-01-05"],"3e8":["2026-01-06","2026-02-04","2026-03-04","2026-04-06","2026-05-06","2026-06-03","2026-07-03","2026-08-05","2026-09-03","2026-10-05","2026-11-05","2026-12-03","2027-01-06"],"4e9":["2026-01-07","2026-02-05","2026-03-05","2026-04-07","2026-05-07","2026-06-05","2026-07-06","2026-08-06","2026-09-04","2026-10-06","2026-11-06","2026-12-04","2027-01-07"],"5e0":["2026-01-08","2026-02-06","2026-03-06","2026-04-08","2026-05-08","2026-06-08","2026-07-07","2026-08-07","2026-09-08","2026-10-07","2026-11-09","2026-12-07","2027-01-08"]};
+const ACIMA_MAP={"1":"1e6","6":"1e6","2":"2e7","7":"2e7","3":"3e8","8":"3e8","4":"4e9","9":"4e9","5":"5e0","0":"5e0"};
+function payDateCalendar(faixa,digito,compDate){
+  if(digito==='' || digito==null) return null;
+  const idx=(compDate.getFullYear()-2026)*12 + compDate.getMonth() + 1; // idx0 = dez/2025
+  const row = faixa==='acima' ? CAL_ACIMA[ACIMA_MAP[digito]] : CAL_ATE[digito];
+  if(!row || idx<0 || idx>=row.length) return null;
+  return new Date(row[idx]+'T00:00:00');
+}
+
+// ---------- máscara de moeda ----------
+function maskMoeda(el){ el.addEventListener('input',()=>{ let d=el.value.replace(/\D/g,''); if(!d){el.value='';return;} el.value=(parseInt(d,10)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }); }
+['total','primeiroPag','honorarios'].forEach(id=>maskMoeda(document.getElementById(id)));
+
+// ---------- toggles ----------
+function toggleBanco(){ document.getElementById('bancoOutro').classList.toggle('hidden', document.getElementById('bancoBenef').value!=='__outro'); }
+function toggleHon(){
+  const pct=document.getElementById('tipoHon').value==='pct';
+  document.getElementById('boxHonPct').classList.toggle('hidden',!pct);
+  document.getElementById('boxHonFixo').classList.toggle('hidden',pct);
+}
+function getDias(){ return document.getElementById('excChk').checked ? Math.max(1,Math.min(120, parseInt(document.getElementById('dias').value,10)||120)) : 120; }
+function toggleExc(){
+  const on=document.getElementById('excChk').checked;
+  document.getElementById('excBox').classList.toggle('hidden',!on);
+  document.getElementById('fimHint').textContent = on? 'conforme dias' : '120 dias (auto)';
+  recalcFim();
+}
+function recalcFim(){
+  const v=document.getElementById('periodoIni').value;
+  if(v){ const ini=new Date(v+'T00:00:00'); document.getElementById('periodoFim').value=toISO(addDias(ini,getDias()-1)); }
+  else document.getElementById('periodoFim').value='';
+  atualizarUnico();
+}
+function atualizarUnico(){
+  const pIni=document.getElementById('periodoIni').value;
+  const conc=document.getElementById('concessao').value;
+  let unico=false;
+  if(pIni && conc){
+    const fim=addDias(new Date(pIni+'T00:00:00'), getDias()-1);
+    unico = new Date(conc+'T00:00:00') >= fim; // toda a vigência já venceu
+  }
+  document.getElementById('boxPrimeiroPag').classList.toggle('hidden', unico);
+  document.getElementById('avisoUnico').classList.toggle('hidden', !unico);
+}
+document.getElementById('periodoIni').addEventListener('change',recalcFim);
+document.getElementById('concessao').addEventListener('change',atualizarUnico);
+
+// ---------- núcleo de cálculo ----------
+function calcularCompetencias(inicio,totalDias){
+  const comps=[]; let restante=totalDias; let cursor=new Date(inicio);
+  while(restante>0){
+    const dm=diasNoMes(cursor.getFullYear(),cursor.getMonth());
+    const ate=dm-cursor.getDate()+1;
+    const usar=Math.min(ate,restante);
+    comps.push({ini:new Date(cursor),fim:addDias(cursor,usar-1),dias:usar});
+    restante-=usar; cursor=new Date(cursor.getFullYear(),cursor.getMonth()+1,1);
+  }
+  return comps;
+}
+
+function gerar(){
+  const erro=document.getElementById('erro'); erro.style.display='none';
+  const nome=document.getElementById('nome').value.trim();
+  const total=parseBR(document.getElementById('total').value);
+  const primeiroPag=parseBR(document.getElementById('primeiroPag').value);
+  let bancoBenef=document.getElementById('bancoBenef').value;
+  if(bancoBenef==='__outro') bancoBenef=document.getElementById('bancoOutro').value.trim()||'____________';
+  const pIni=document.getElementById('periodoIni').value;
+  const conc=document.getElementById('concessao').value;
+  const disp=document.getElementById('disponibilidade').value;
+  const tipoHon=document.getElementById('tipoHon').value;
+  let honor, pctHon=0;
+  if(tipoHon==='pct'){ pctHon=parseInt(document.getElementById('pct').value,10); honor=Math.round(total*pctHon/100*100)/100; }
+  else honor=parseBR(document.getElementById('honorarios').value);
+  const compInicio=parseInt(document.getElementById('compInicio').value,10);
+  const nParc=parseInt(document.getElementById('parcelas').value,10);
+  const forma=document.getElementById('forma').value;
+  const faixa=document.getElementById('faixa').value;
+  const digito=document.getElementById('digito').value;
+  const dias=getDias();
+  const incluir13 = document.getElementById('excChk').checked ? document.getElementById('incl13').checked : true;
+
+  if(!pIni){ erro.textContent='Informe a data de início do benefício (nascimento).'; erro.style.display='block'; return; }
+  if(honor<=0){ erro.textContent='Informe o valor dos honorários.'; erro.style.display='block'; return; }
+
+  const inicio=new Date(pIni+'T00:00:00');
+  const comps=calcularCompetencias(inicio,dias);
+  const totalComps=comps.length;
+  const ultima=totalComps-1;
+
+  // concessão: define quais competências já venceram (atrasadas)
+  const concDate = conc ? new Date(conc+'T00:00:00') : null;
+  comps.forEach(c=>{ c.atrasada = concDate ? (c.fim <= concDate) : false; });
+  const nAtrasadas = comps.filter(c=>c.atrasada).length;
+  const tudoDeUmaVez = !!concDate && nAtrasadas===totalComps; // criança já passou dos 120 dias
+
+  const PIX_CNPJ='60.284.876/0001-39';
+  let formaBloco;
+  if(forma==='mercantil') formaBloco='✅ Forma de pagamento: Desconto direto no banco Mercantil.';
+  else if(forma==='asaas') formaBloco='✅ Forma de pagamento: Boleto bancário — vamos enviar o boleto aqui no grupo alguns dias antes da data do seu pagamento.';
+  else formaBloco='✅ Forma de pagamento: Pix\n\n💰 Pagamento por PIX:\n📱 Chave PIX (CNPJ): '+PIX_CNPJ+'\n👤 Nome: ARRAIS SOCIEDADE DE ADVOGADOS\n🏦 Banco: COOPERATIVA DE CRÉDITO, POUPANÇA E INVESTIMENTO BOTUCARAÍ - SICREDI BOTUCARAÍ RS/MG\n🚨 A Chave Pix é o número do CNPJ que estou mandando na mensagem abaixo, assim fica mais fácil para você copiar.\n✅ Após o pagamento, por favor, envie o comprovante para confirmação.';
+
+  // honorário: à vista (1x) se sair tudo de uma vez; senão conforme parcelamento
+  const nParcEf = tudoDeUmaVez ? 1 : nParc;
+  const valParc=honor/nParcEf; const parcVals=[]; let acum=0;
+  for(let i=0;i<nParcEf;i++){ if(i<nParcEf-1){const v=Math.floor(valParc*100)/100;parcVals.push(v);acum+=v;} else parcVals.push(Math.round((honor-acum)*100)/100); }
+
+  // alocação escritório/cliente só vale no pagamento mensal
+  let inicioBanca=0, fimBanca=-1;
+  if(!tudoDeUmaVez){
+    inicioBanca=Math.min(compInicio-1, totalComps-1);
+    fimBanca=Math.min(inicioBanca+nParc-1, totalComps-1);
+    comps.forEach((c,i)=>{ c.tipo=(i>=inicioBanca && i<=fimBanca)?'banca':'cliente'; });
+  }
+
+  // datas de pagamento: 1º pagamento/atrasado = data informada; demais = calendário INSS
+  const dispDate = disp ? new Date(disp+'T00:00:00') : null;
+  const compDates = comps.map((c,i)=>{
+    if(tudoDeUmaVez || c.atrasada || i===0) return dispDate;
+    return payDateCalendar(faixa,digito,c.ini);
+  });
+  function dtxt(d){ return d ? (('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()) : '[XX/XX/XXXX]'; }
+
+  // ---------- resumo ----------
+  let resumo='<div class="resumo"><table>';
+  resumo+=`<tr><td>Valor total do benefício</td><td>R$ ${fmt(total)}</td></tr>`;
+  resumo+=`<tr><td>Período (${dias} dias)</td><td>${isoToBR(pIni)} a ${isoToBR(document.getElementById('periodoFim').value)}</td></tr>`;
+  resumo+=`<tr><td>Competências</td><td>${totalComps} competência(s)</td></tr>`;
+  if(tudoDeUmaVez){
+    resumo+=`<tr><td>Recebimento</td><td>Pagamento único (atrasado)</td></tr>`;
+    resumo+=`<tr><td>Honorários</td><td>R$ ${fmt(honor)} à vista (1x)</td></tr>`;
+  }else{
+    if(nAtrasadas>0) resumo+=`<tr><td>Recebimento</td><td>${nAtrasadas} atrasada(s) de uma vez + ${totalComps-nAtrasadas} mensal(is)</td></tr>`;
+    resumo+=`<tr><td>Honorários</td><td>R$ ${fmt(honor)} em ${nParc}x (a partir da ${compInicio}ª)</td></tr>`;
+  }
+  resumo+='</table><div class="comp-list">';
+  comps.forEach((c,i)=>{
+    const t13=(i===ultima && incluir13)?' + 13º':'';
+    let tag;
+    if(tudoDeUmaVez || c.atrasada) tag='<span class="pill banca">ATRASADO</span>';
+    else tag=c.tipo==='banca'?'<span class="pill banca">ESCRITÓRIO + CLIENTE</span>':'<span class="pill cliente">CLIENTE</span>';
+    resumo+=`<div class="item"><span>${i+1}. ${MESES[c.ini.getMonth()]} (${c.dias} dias${t13}) — ${dtxt(compDates[i])}</span>${tag}</div>`;
+  });
+  resumo+='</div></div>';
+
+  // ---------- mensagem ----------
+  let m='🟢 *Boa notícia, @!*\n';
+  m+='Seu Salário-Maternidade foi liberado!\nSeguem as informações:\n\n';
+  if(tudoDeUmaVez){
+    m+='💰 Pagamento único: R$ '+fmt(total)+'\n';
+    m+='📅 Disponível a partir de: '+isoToBR(disp)+'\n\n';
+    m+='🏦 Banco: '+bancoBenef+'\n\n';
+    if(forma!=='mercantil') m+='Para sacar, leve um documento com foto: serve sua identidade (RG), carteira de trabalho com foto ou, se você tiver, a carteira de motorista.\n\n';
+    m+='🎯 Como o benefício foi concedido depois da criança já ter completado 4 meses, o valor sai todo de uma vez: '+dias+' dias ('+Math.round(dias/30)+' meses) de salário-maternidade'+(incluir13?' + 13º proporcional':'')+', totalizando R$ '+fmt(total)+' (já com os descontos do INSS).\n';
+    m+='——\n';
+    m+='💼 Honorários do advogado: R$ '+fmt(honor)+'\n\n';
+    m+='Pagamento à vista (de uma vez): R$ '+fmt(honor)+'\n';
+    m+='\n'+formaBloco+'\n';
+    m+='\nQualquer dúvida, é só me chamar aqui! Estou à disposição. 🤝';
+  }else{
+    m+='💰 1º pagamento: R$ '+(primeiroPag?fmt(primeiroPag):'__________')+'\n';
+    m+='📅 Disponível a partir de: '+isoToBR(disp)+'\n\n';
+    m+='🏦 Banco: '+bancoBenef+'\n\n';
+    if(forma!=='mercantil') m+='Para sacar, leve um documento com foto: serve sua identidade (RG), carteira de trabalho com foto ou, se você tiver, a carteira de motorista.\n\n';
+    m+='🎯 Você vai receber '+dias+' dias ('+Math.round(dias/30)+' meses) de salário-maternidade'+(incluir13?' + 13º proporcional':'')+', totalizando R$ '+fmt(total)+' (já com os descontos do INSS).\n';
+    m+='——\n';
+    m+='💼 Honorários do advogado: R$ '+fmt(honor)+'\n\n';
+    m+='O pagamento dos honorários poderá ser parcelado assim:\n';
+    parcVals.forEach((v,i)=>{ m+='📅 '+(i+1)+'ª parcela dos honorários ('+dtxt(compDates[inicioBanca+i])+'): R$ '+fmt(v)+'\n'; });
+    m+='\n'+formaBloco+'\n';
+    m+='——\n';
+    m+='📅 Datas dos próximos pagamentos (valor todo para a cliente, sem desconto de honorário):\n';
+    if(nAtrasadas>0) m+='• '+dtxt(dispDate)+' – valor atrasado (competências já vencidas, pago de uma vez)\n';
+    comps.forEach((c,i)=>{
+      if(c.atrasada || c.tipo!=='cliente') return;
+      if(i===ultima) m+='• '+dtxt(compDates[i])+' – pagamento dos últimos '+c.dias+' dias'+(incluir13?' + 13º proporcional':'')+', tudo para a cliente (última parcela)\n';
+      else m+='• '+dtxt(compDates[i])+' – valor todo para a cliente (sem desconto)\n';
+    });
+    m+='\nQualquer dúvida, é só me chamar aqui! Estou à disposição. 🤝';
+  }
+
+  let extra='';
+  if(forma==='pix'){
+    window._pix=PIX_CNPJ;
+    extra='<div style="margin-top:14px;font-size:12px;color:#6a7787;font-weight:600;">2ª mensagem — chave Pix para copiar:</div>'+
+      '<div class="msg-box" style="max-height:none;">'+PIX_CNPJ+'</div>'+
+      '<button class="btn-copiar" onclick="copiarPix()">Copiar chave Pix</button>';
+  }
+  document.getElementById('resultado').innerHTML=
+    resumo+
+    '<h2 style="margin-top:18px;">Mensagem para o cliente</h2>'+
+    '<div class="msg-box">'+m.replace(/</g,'&lt;')+'</div>'+
+    '<button class="btn-copiar" onclick="copiar()">Copiar mensagem</button>'+extra;
+  window._msg=m;
+}
+
+function copiar(){ navigator.clipboard.writeText(window._msg||'').then(()=>{ const b=document.querySelectorAll('.btn-copiar')[0]; const t=b.textContent; b.textContent='✓ Copiado!'; setTimeout(()=>b.textContent=t,1600); }); }
+function copiarPix(){ navigator.clipboard.writeText(window._pix||'').then(()=>{ const bs=document.querySelectorAll('.btn-copiar'); const b=bs[bs.length-1]; const t=b.textContent; b.textContent='✓ Copiado!'; setTimeout(()=>b.textContent=t,1600); }); }
+</script>
+</body>
+</html>
