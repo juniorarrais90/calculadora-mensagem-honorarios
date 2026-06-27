@@ -51,6 +51,17 @@
   .check.sub{font-weight:400;color:#5b6675;margin-top:10px;}
   .btn-gerar{width:100%;margin-top:22px;padding:14px;background:var(--azul);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.3px;}
   .btn-gerar:hover{background:var(--azul2);}
+  /* --- lançamentos --- */
+  .btn-sec{margin-top:10px;margin-right:8px;padding:9px 14px;background:#eef2f7;color:var(--azul);border:1px solid var(--cinza-borda);border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;}
+  .btn-sec:hover{background:#e2e9f2;}
+  .btn-rem{margin-top:10px;padding:7px 12px;background:#fde8e8;color:#9b2c2c;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;}
+  .btn-rem:hover{filter:brightness(.97);}
+  .lanc{border:1px solid var(--cinza-borda);border-radius:9px;padding:14px;margin-top:12px;background:#fbfcfe;}
+  .lanc .lanc-tit{font-size:12px;font-weight:700;color:var(--azul-claro);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+  .lc-comps{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+  .ckcomp{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;background:#fff;border:1px solid var(--cinza-borda);border-radius:7px;padding:6px 10px;margin:0;cursor:pointer;}
+  .ckcomp input{width:auto;margin:0;}
+  .lanc-vazio{color:#90a0b3;font-size:12.5px;margin:8px 0 0;}
   .saida h2{margin-top:0;}
   .resumo{font-size:13px;background:var(--cinza);border-radius:8px;padding:14px;margin-bottom:16px;}
   .resumo table{width:100%;border-collapse:collapse;}
@@ -58,10 +69,11 @@
   .resumo td:first-child{color:#6a7787;width:46%;}
   .resumo td:last-child{font-weight:600;text-align:right;}
   .comp-list{margin:10px 0 0;font-size:12.5px;}
-  .comp-list .item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--cinza-borda);}
-  .pill{font-size:10px;padding:1px 8px;border-radius:10px;font-weight:700;}
+  .comp-list .item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--cinza-borda);gap:8px;}
+  .pill{font-size:10px;padding:1px 8px;border-radius:10px;font-weight:700;white-space:nowrap;}
   .pill.banca{background:#fde8e8;color:#9b2c2c;}
   .pill.cliente{background:var(--verde-bg);color:var(--verde);}
+  .pill.quitada{background:#e2e8f0;color:#5b6675;}
   .msg-box{white-space:pre-wrap;font-family:"Segoe UI", Arial, sans-serif;font-size:13.5px;background:#f7faf7;border:1px solid #cfe3d6;border-radius:10px;padding:16px;line-height:1.55;max-height:460px;overflow:auto;}
   .btn-copiar{margin-top:12px;width:100%;padding:12px;background:var(--verde);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;}
   .btn-copiar:hover{filter:brightness(.95);}
@@ -154,11 +166,16 @@
           <label>Valor total do benefício <span class="hint">120 dias + 13º, líquido</span></label>
           <input id="total" type="text" inputmode="numeric" value="6.150,00">
 
-          <div id="boxPrimeiroPag">
-            <label>Valor do 1º pagamento</label>
-            <input id="primeiroPag" type="text" inputmode="numeric" placeholder="R$ 0,00">
+          <!-- ÁREA DE LANÇAMENTOS DE PAGAMENTOS -->
+          <div id="boxLancamentos">
+            <label style="margin-top:18px;">Pagamentos já liberados pelo INSS <span class="hint">(cada depósito que a cliente já pode/pôde sacar)</span></label>
+            <div id="lancList"></div>
+            <p id="lancVazio" class="lanc-vazio">Nenhum pagamento lançado ainda. Use os botões abaixo para registrar.</p>
+            <button type="button" class="btn-sec" onclick="addLancamento()">+ Adicionar pagamento</button>
+            <button type="button" class="btn-sec" onclick="sugerirAtrasados()">Lançar atrasados pela concessão</button>
+            <p class="aviso">As competências são geradas automaticamente a partir do início do benefício. Marque em cada pagamento quais competências ele quitou — o sistema sugere os atrasados, você confirma.</p>
           </div>
-          <p id="avisoUnico" class="aviso hidden" style="color:#9b2c2c;">Benefício concedido após os 120 dias — será pago de uma vez, não há 1º pagamento separado.</p>
+          <p id="avisoUnico" class="aviso hidden" style="color:#9b2c2c;">Benefício concedido após os 120 dias — tende a ser pago de uma vez. Lance um único pagamento com todas as competências.</p>
 
           <label>Banco do benefício <span class="hint">(onde a cliente saca)</span></label>
           <select id="bancoBenef" onchange="toggleBanco()">
@@ -260,7 +277,6 @@ function toISO(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'
 const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 
 // ---------- Calendário INSS 2026 (extraído do PDF oficial) ----------
-// Colunas: idx0=competência dez/2025, idx1=jan/2026 ... idx12=dez/2026. Valor = data real do pagamento.
 const CAL_ATE={"0":["2026-01-08","2026-02-06","2026-03-06","2026-04-08","2026-05-08","2026-06-08","2026-07-07","2026-08-07","2026-09-08","2026-10-07","2026-11-09","2026-12-07","2027-01-08"],"1":["2025-12-22","2026-01-26","2026-02-23","2026-03-25","2026-04-24","2026-05-25","2026-06-24","2026-07-27","2026-08-25","2026-09-24","2026-10-26","2026-11-24","2026-12-22"],"2":["2025-12-23","2026-01-27","2026-02-24","2026-03-26","2026-04-27","2026-05-26","2026-06-25","2026-07-28","2026-08-26","2026-09-25","2026-10-27","2026-11-25","2026-12-23"],"3":["2025-12-26","2026-01-28","2026-02-25","2026-03-27","2026-04-28","2026-05-27","2026-06-26","2026-07-29","2026-08-27","2026-09-28","2026-10-28","2026-11-26","2026-12-28"],"4":["2025-12-29","2026-01-29","2026-02-26","2026-03-30","2026-04-29","2026-05-28","2026-06-29","2026-07-30","2026-08-28","2026-09-29","2026-10-29","2026-11-27","2026-12-29"],"5":["2025-12-30","2026-01-30","2026-02-27","2026-03-31","2026-04-30","2026-05-29","2026-06-30","2026-07-31","2026-08-31","2026-09-30","2026-10-30","2026-11-30","2026-12-30"],"6":["2026-01-02","2026-02-02","2026-03-02","2026-04-01","2026-05-04","2026-06-01","2026-07-01","2026-08-03","2026-09-01","2026-10-01","2026-11-03","2026-12-01","2027-01-04"],"7":["2026-01-05","2026-02-03","2026-03-03","2026-04-02","2026-05-05","2026-06-02","2026-07-02","2026-08-04","2026-09-02","2026-10-02","2026-11-04","2026-12-02","2027-01-05"],"8":["2026-01-06","2026-02-04","2026-03-04","2026-04-06","2026-05-06","2026-06-03","2026-07-03","2026-08-05","2026-09-03","2026-10-05","2026-11-05","2026-12-03","2027-01-06"],"9":["2026-01-07","2026-02-05","2026-03-05","2026-04-07","2026-05-07","2026-06-05","2026-07-06","2026-08-06","2026-09-04","2026-10-06","2026-11-06","2026-12-04","2027-01-07"]};
 const CAL_ACIMA={"1e6":["2026-01-02","2026-02-02","2026-03-02","2026-04-01","2026-05-02","2026-06-01","2026-07-01","2026-08-03","2026-09-01","2026-10-01","2026-11-03","2026-12-01","2027-01-04"],"2e7":["2026-01-05","2026-02-03","2026-03-03","2026-04-02","2026-05-05","2026-06-02","2026-07-02","2026-08-04","2026-09-02","2026-10-02","2026-11-04","2026-12-02","2027-01-05"],"3e8":["2026-01-06","2026-02-04","2026-03-04","2026-04-06","2026-05-06","2026-06-03","2026-07-03","2026-08-05","2026-09-03","2026-10-05","2026-11-05","2026-12-03","2027-01-06"],"4e9":["2026-01-07","2026-02-05","2026-03-05","2026-04-07","2026-05-07","2026-06-05","2026-07-06","2026-08-06","2026-09-04","2026-10-06","2026-11-06","2026-12-04","2027-01-07"],"5e0":["2026-01-08","2026-02-06","2026-03-06","2026-04-08","2026-05-08","2026-06-08","2026-07-07","2026-08-07","2026-09-08","2026-10-07","2026-11-09","2026-12-07","2027-01-08"]};
 const ACIMA_MAP={"1":"1e6","6":"1e6","2":"2e7","7":"2e7","3":"3e8","8":"3e8","4":"4e9","9":"4e9","5":"5e0","0":"5e0"};
@@ -274,7 +290,8 @@ function payDateCalendar(faixa,digito,compDate){
 
 // ---------- máscara de moeda ----------
 function maskMoeda(el){ el.addEventListener('input',()=>{ let d=el.value.replace(/\D/g,''); if(!d){el.value='';return;} el.value=(parseInt(d,10)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }); }
-['total','primeiroPag','honorarios'].forEach(id=>maskMoeda(document.getElementById(id)));
+['total','honorarios'].forEach(id=>maskMoeda(document.getElementById(id)));
+function maskInline(el){ let d=el.value.replace(/\D/g,''); el.value=d?(parseInt(d,10)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):''; }
 
 // ---------- toggles ----------
 function toggleBanco(){ document.getElementById('bancoOutro').classList.toggle('hidden', document.getElementById('bancoBenef').value!=='__outro'); }
@@ -295,6 +312,7 @@ function recalcFim(){
   if(v){ const ini=new Date(v+'T00:00:00'); document.getElementById('periodoFim').value=toISO(addDias(ini,getDias()-1)); }
   else document.getElementById('periodoFim').value='';
   atualizarUnico();
+  renderLanc();
 }
 function atualizarUnico(){
   const pIni=document.getElementById('periodoIni').value;
@@ -302,9 +320,8 @@ function atualizarUnico(){
   let unico=false;
   if(pIni && conc){
     const fim=addDias(new Date(pIni+'T00:00:00'), getDias()-1);
-    unico = new Date(conc+'T00:00:00') >= fim; // toda a vigência já venceu
+    unico = new Date(conc+'T00:00:00') >= fim;
   }
-  document.getElementById('boxPrimeiroPag').classList.toggle('hidden', unico);
   document.getElementById('avisoUnico').classList.toggle('hidden', !unico);
 }
 document.getElementById('periodoIni').addEventListener('change',recalcFim);
@@ -322,12 +339,73 @@ function calcularCompetencias(inicio,totalDias){
   }
   return comps;
 }
+function competenciasAtuais(){
+  const v=document.getElementById('periodoIni').value;
+  if(!v) return [];
+  return calcularCompetencias(new Date(v+'T00:00:00'), getDias());
+}
 
+// ---------- lançamentos de pagamentos (estado) ----------
+let LANC=[];        // { id, data, valor, comps:Set(indices) }
+let lancSeq=0;
+
+function addLancamento(prefill){
+  const disp=document.getElementById('disponibilidade').value;
+  LANC.push({ id:++lancSeq, data:(prefill&&prefill.data)||disp||'', valor:(prefill&&prefill.valor)||'', comps:new Set((prefill&&prefill.comps)||[]) });
+  renderLanc();
+}
+function removeLanc(id){ LANC=LANC.filter(l=>l.id!==id); renderLanc(); }
+function setLanc(id,k,v){ const l=LANC.find(x=>x.id===id); if(l) l[k]=v; }
+function toggleComp(id,i,on){ const l=LANC.find(x=>x.id===id); if(!l) return; if(on) l.comps.add(i); else l.comps.delete(i); }
+
+function sugerirAtrasados(){
+  const comps=competenciasAtuais();
+  const conc=document.getElementById('concessao').value;
+  const disp=document.getElementById('disponibilidade').value;
+  if(!comps.length){ alert('Preencha o início do benefício primeiro.'); return; }
+  if(!conc){ alert('Preencha a data da concessão para identificar os atrasados.'); return; }
+  const concDate=new Date(conc+'T00:00:00');
+  const idxs=comps.map((c,i)=> c.fim<=concDate ? i : -1).filter(i=>i>=0);
+  if(!idxs.length){ alert('Nenhuma competência está atrasada pela data da concessão informada.'); return; }
+  addLancamento({ data:disp||'', comps:idxs });
+}
+
+function renderLanc(){
+  const comps=competenciasAtuais();
+  const cont=document.getElementById('lancList');
+  const vazio=document.getElementById('lancVazio');
+  cont.innerHTML='';
+  vazio.style.display = LANC.length? 'none':'block';
+  LANC.forEach((l,ord)=>{
+    const div=document.createElement('div'); div.className='lanc';
+    let compsHtml;
+    if(comps.length){
+      compsHtml='<label>Competências quitadas neste pagamento</label><div class="lc-comps">';
+      comps.forEach((c,i)=>{
+        const ck=l.comps.has(i)?'checked':'';
+        compsHtml+='<label class="ckcomp"><input type="checkbox" '+ck+' onchange="toggleComp('+l.id+','+i+',this.checked)"> '+(i+1)+'. '+MESES[c.ini.getMonth()]+'</label>';
+      });
+      compsHtml+='</div>';
+    } else {
+      compsHtml='<p class="lanc-vazio">Preencha o início do benefício para escolher as competências.</p>';
+    }
+    div.innerHTML=
+      '<div class="lanc-tit">Pagamento '+(ord+1)+'</div>'+
+      '<div class="row">'+
+        '<div><label>Data do pagamento</label><input type="date" value="'+(l.data||'')+'" onchange="setLanc('+l.id+",'data',this.value)\"></div>"+
+        '<div><label>Valor</label><input type="text" inputmode="numeric" value="'+(l.valor||'')+'" placeholder="R$ 0,00" oninput="maskInline(this);setLanc('+l.id+",'valor',this.value)\"></div>"+
+      '</div>'+
+      compsHtml+
+      '<button type="button" class="btn-rem" onclick="removeLanc('+l.id+')">Remover pagamento</button>';
+    cont.appendChild(div);
+  });
+}
+
+// ---------- geração ----------
 function gerar(){
   const erro=document.getElementById('erro'); erro.style.display='none';
   const nome=document.getElementById('nome').value.trim();
   const total=parseBR(document.getElementById('total').value);
-  const primeiroPag=parseBR(document.getElementById('primeiroPag').value);
   let bancoBenef=document.getElementById('bancoBenef').value;
   if(bancoBenef==='__outro') bancoBenef=document.getElementById('bancoOutro').value.trim()||'____________';
   const pIni=document.getElementById('periodoIni').value;
@@ -353,11 +431,18 @@ function gerar(){
   const totalComps=comps.length;
   const ultima=totalComps-1;
 
-  // concessão: define quais competências já venceram (atrasadas)
+  // concessão (apoio): marca quais competências já venceram
   const concDate = conc ? new Date(conc+'T00:00:00') : null;
   comps.forEach(c=>{ c.atrasada = concDate ? (c.fim <= concDate) : false; });
   const nAtrasadas = comps.filter(c=>c.atrasada).length;
-  const tudoDeUmaVez = !!concDate && nAtrasadas===totalComps; // criança já passou dos 120 dias
+  const tudoDeUmaVez = !!concDate && nAtrasadas===totalComps;
+
+  // quitadas via lançamentos
+  const quitadas=new Set();
+  LANC.forEach(l=> l.comps.forEach(i=>{ if(i<totalComps) quitadas.add(i); }));
+  const temLanc = quitadas.size>0;
+  // "já pago": lançado manualmente OU atrasado pela concessão (apoio)
+  const jaPago = i => quitadas.has(i) || comps[i].atrasada;
 
   const PIX_CNPJ='60.284.876/0001-39';
   let formaBloco;
@@ -370,7 +455,7 @@ function gerar(){
   const valParc=honor/nParcEf; const parcVals=[]; let acum=0;
   for(let i=0;i<nParcEf;i++){ if(i<nParcEf-1){const v=Math.floor(valParc*100)/100;parcVals.push(v);acum+=v;} else parcVals.push(Math.round((honor-acum)*100)/100); }
 
-  // alocação escritório/cliente só vale no pagamento mensal
+  // alocação escritório/cliente só no pagamento mensal
   let inicioBanca=0, fimBanca=-1;
   if(!tudoDeUmaVez){
     inicioBanca=Math.min(compInicio-1, totalComps-1);
@@ -378,39 +463,48 @@ function gerar(){
     comps.forEach((c,i)=>{ c.tipo=(i>=inicioBanca && i<=fimBanca)?'banca':'cliente'; });
   }
 
-  // datas de pagamento: 1º pagamento/atrasado = data informada; demais = calendário INSS
+  // datas: prioridade -> lançamento manual; depois disponibilidade (1º/atrasado); depois calendário INSS
   const dispDate = disp ? new Date(disp+'T00:00:00') : null;
+  function lancDateFor(i){ for(const l of LANC){ if(l.comps.has(i) && l.data) return new Date(l.data+'T00:00:00'); } return null; }
   const compDates = comps.map((c,i)=>{
+    const ld=lancDateFor(i); if(ld) return ld;
     if(tudoDeUmaVez || c.atrasada || i===0) return dispDate;
     return payDateCalendar(faixa,digito,c.ini);
   });
   function dtxt(d){ return d ? (('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()) : '[XX/XX/XXXX]'; }
 
+  // lançamentos ordenados por data (para exibição)
+  const lancOrden = LANC.filter(l=>l.comps.size>0).slice().sort((a,b)=> String(a.data).localeCompare(String(b.data)));
+  function mesesDe(l){ return [...l.comps].sort((a,b)=>a-b).map(i=> i<totalComps? MESES[comps[i].ini.getMonth()] : '').filter(Boolean).join(', '); }
+
   // ---------- resumo ----------
   let resumo='<div class="resumo"><table>';
-  resumo+=`<tr><td>Valor total do benefício</td><td>R$ ${fmt(total)}</td></tr>`;
-  resumo+=`<tr><td>Período (${dias} dias)</td><td>${isoToBR(pIni)} a ${isoToBR(document.getElementById('periodoFim').value)}</td></tr>`;
-  resumo+=`<tr><td>Competências</td><td>${totalComps} competência(s)</td></tr>`;
+  resumo+='<tr><td>Valor total do benefício</td><td>R$ '+fmt(total)+'</td></tr>';
+  resumo+='<tr><td>Período ('+dias+' dias)</td><td>'+isoToBR(pIni)+' a '+isoToBR(document.getElementById('periodoFim').value)+'</td></tr>';
+  resumo+='<tr><td>Competências</td><td>'+totalComps+' competência(s)</td></tr>';
   if(tudoDeUmaVez){
-    resumo+=`<tr><td>Recebimento</td><td>Pagamento único (atrasado)</td></tr>`;
-    resumo+=`<tr><td>Honorários</td><td>R$ ${fmt(honor)} à vista (1x)</td></tr>`;
+    resumo+='<tr><td>Recebimento</td><td>Pagamento único (atrasado)</td></tr>';
+    resumo+='<tr><td>Honorários</td><td>R$ '+fmt(honor)+' à vista (1x)</td></tr>';
   }else{
-    if(nAtrasadas>0) resumo+=`<tr><td>Recebimento</td><td>${nAtrasadas} atrasada(s) de uma vez + ${totalComps-nAtrasadas} mensal(is)</td></tr>`;
-    resumo+=`<tr><td>Honorários</td><td>R$ ${fmt(honor)} em ${nParc}x (a partir da ${compInicio}ª)</td></tr>`;
+    const nQuit=comps.map((c,i)=>jaPago(i)?1:0).reduce((a,b)=>a+b,0);
+    resumo+='<tr><td>Já quitadas</td><td>'+nQuit+' de '+totalComps+'</td></tr>';
+    resumo+='<tr><td>Honorários</td><td>R$ '+fmt(honor)+' em '+nParc+'x (a partir da '+compInicio+'ª)</td></tr>';
   }
   resumo+='</table><div class="comp-list">';
   comps.forEach((c,i)=>{
     const t13=(i===ultima && incluir13)?' + 13º':'';
     let tag;
-    if(tudoDeUmaVez || c.atrasada) tag='<span class="pill banca">ATRASADO</span>';
+    if(jaPago(i)) tag='<span class="pill quitada">JÁ PAGO</span>';
+    else if(tudoDeUmaVez) tag='<span class="pill quitada">ATRASADO</span>';
     else tag=c.tipo==='banca'?'<span class="pill banca">ESCRITÓRIO + CLIENTE</span>':'<span class="pill cliente">CLIENTE</span>';
-    resumo+=`<div class="item"><span>${i+1}. ${MESES[c.ini.getMonth()]} (${c.dias} dias${t13}) — ${dtxt(compDates[i])}</span>${tag}</div>`;
+    resumo+='<div class="item"><span>'+(i+1)+'. '+MESES[c.ini.getMonth()]+' ('+c.dias+' dias'+t13+') — '+dtxt(compDates[i])+'</span>'+tag+'</div>';
   });
   resumo+='</div></div>';
 
   // ---------- mensagem ----------
   let m='🟢 *Boa notícia, @!*\n';
   m+='Seu Salário-Maternidade foi liberado!\nSeguem as informações:\n\n';
+
   if(tudoDeUmaVez){
     m+='💰 Pagamento único: R$ '+fmt(total)+'\n';
     m+='📅 Disponível a partir de: '+isoToBR(disp)+'\n\n';
@@ -423,24 +517,44 @@ function gerar(){
     m+='\n'+formaBloco+'\n';
     m+='\nQualquer dúvida, é só me chamar aqui! Estou à disposição. 🤝';
   }else{
-    m+='💰 1º pagamento: R$ '+(primeiroPag?fmt(primeiroPag):'__________')+'\n';
-    m+='📅 Disponível a partir de: '+isoToBR(disp)+'\n\n';
+    // já liberados
+    if(temLanc){
+      m+='💰 Pagamentos já liberados:\n';
+      lancOrden.forEach(l=>{
+        const mz=mesesDe(l);
+        m+='• '+isoToBR(l.data)+' – R$ '+(parseBR(l.valor)?fmt(parseBR(l.valor)):'__________')+(mz?' (referente a '+mz+')':'')+'\n';
+      });
+      m+='\n';
+    }else{
+      const primeiro = lancOrden.length? parseBR(lancOrden[0].valor) : 0;
+      m+='💰 1º pagamento: R$ '+(primeiro?fmt(primeiro):'__________')+'\n';
+      m+='📅 Disponível a partir de: '+isoToBR(disp)+'\n\n';
+    }
     m+='🏦 Banco: '+bancoBenef+'\n\n';
     if(forma!=='mercantil') m+='Para sacar, leve um documento com foto: serve sua identidade (RG), carteira de trabalho com foto ou, se você tiver, a carteira de motorista.\n\n';
     m+='🎯 Você vai receber '+dias+' dias ('+Math.round(dias/30)+' meses) de salário-maternidade'+(incluir13?' + 13º proporcional':'')+', totalizando R$ '+fmt(total)+' (já com os descontos do INSS).\n';
     m+='——\n';
     m+='💼 Honorários do advogado: R$ '+fmt(honor)+'\n\n';
     m+='O pagamento dos honorários poderá ser parcelado assim:\n';
-    parcVals.forEach((v,i)=>{ m+='📅 '+(i+1)+'ª parcela dos honorários ('+dtxt(compDates[inicioBanca+i])+'): R$ '+fmt(v)+'\n'; });
+    // pares valor+data, ordenados cronologicamente (corrige bug de ordem)
+    const honPairs=[];
+    for(let i=0;i<nParcEf;i++){ honPairs.push({ v:parcVals[i], d:compDates[inicioBanca+i] }); }
+    honPairs.sort((a,b)=> (a.d?a.d.getTime():Infinity)-(b.d?b.d.getTime():Infinity));
+    honPairs.forEach((p,i)=>{ m+='📅 '+(i+1)+'ª parcela dos honorários ('+dtxt(p.d)+'): R$ '+fmt(p.v)+'\n'; });
     m+='\n'+formaBloco+'\n';
     m+='——\n';
     m+='📅 Datas dos próximos pagamentos (valor todo para a cliente, sem desconto de honorário):\n';
-    if(nAtrasadas>0) m+='• '+dtxt(dispDate)+' – valor atrasado (competências já vencidas, pago de uma vez)\n';
+    const prox=[];
+    // atrasados pela concessão ainda não lançados manualmente -> linha única
+    if(!temLanc && nAtrasadas>0) prox.push({ d:dispDate, t:'• '+dtxt(dispDate)+' – valor atrasado (competências já vencidas, pago de uma vez)' });
     comps.forEach((c,i)=>{
-      if(c.atrasada || c.tipo!=='cliente') return;
-      if(i===ultima) m+='• '+dtxt(compDates[i])+' – pagamento dos últimos '+c.dias+' dias'+(incluir13?' + 13º proporcional':'')+', tudo para a cliente (última parcela)\n';
-      else m+='• '+dtxt(compDates[i])+' – valor todo para a cliente (sem desconto)\n';
+      if(jaPago(i) || c.tipo!=='cliente') return;
+      if(i===ultima) prox.push({ d:compDates[i], t:'• '+dtxt(compDates[i])+' – pagamento dos últimos '+c.dias+' dias'+(incluir13?' + 13º proporcional':'')+', tudo para a cliente (última parcela)' });
+      else prox.push({ d:compDates[i], t:'• '+dtxt(compDates[i])+' – valor todo para a cliente (sem desconto)' });
     });
+    prox.sort((a,b)=> (a.d?a.d.getTime():Infinity)-(b.d?b.d.getTime():Infinity));
+    if(prox.length) prox.forEach(p=>{ m+=p.t+'\n'; });
+    else m+='• Todas as competências já foram quitadas.\n';
     m+='\nQualquer dúvida, é só me chamar aqui! Estou à disposição. 🤝';
   }
 
@@ -461,6 +575,9 @@ function gerar(){
 
 function copiar(){ navigator.clipboard.writeText(window._msg||'').then(()=>{ const b=document.querySelectorAll('.btn-copiar')[0]; const t=b.textContent; b.textContent='✓ Copiado!'; setTimeout(()=>b.textContent=t,1600); }); }
 function copiarPix(){ navigator.clipboard.writeText(window._pix||'').then(()=>{ const bs=document.querySelectorAll('.btn-copiar'); const b=bs[bs.length-1]; const t=b.textContent; b.textContent='✓ Copiado!'; setTimeout(()=>b.textContent=t,1600); }); }
+
+// init
+renderLanc();
 </script>
 </body>
 </html>
